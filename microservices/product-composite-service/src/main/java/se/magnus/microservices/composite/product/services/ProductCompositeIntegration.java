@@ -101,7 +101,7 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
     }
 
     @Override
-    public List<Recommendation> getRecommendationList(int productId) {
+    public List<Recommendation> getRecommendations(int productId) {
         try {
             String url = recommendationServiceUrl + productId;
 

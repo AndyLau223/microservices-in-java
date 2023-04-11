@@ -41,7 +41,7 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
             throw new NotFoundException("No product found for productId: " + productId);
         }
 
-        List<Recommendation> recommendations = integration.getRecommendationList(productId);
+        List<Recommendation> recommendations = integration.getRecommendations(productId);
 
         List<Review> reviews = integration.getReviews(productId);
 

@@ -18,7 +18,7 @@ public interface RecommendationService {
             value = "/recommendation",
             produces = "application/json"
     )
-    List<Recommendation> getRecommendationList(
+    List<Recommendation> getRecommendations(
             @RequestParam(value = "productId", required = true)
             int productId);
 }
