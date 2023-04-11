@@ -8,3 +8,7 @@
  */
 
 rootProject.name = 'microservices-in-java'
+include ':microservices:product-service'
+include ':microservices:review-service'
+include ':microservices:recommendation-service'
+include ':microservices:product-composite-service'
