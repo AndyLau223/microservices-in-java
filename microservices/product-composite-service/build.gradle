@@ -1,5 +1,7 @@
 plugins {
+//	java plugin adds the Java compiler to the project
 	id 'java'
+//	ensure that Gradle will build a fat JAR file and specify Spring Boot version
 	id 'org.springframework.boot' version '2.5.2'
 	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
 }
@@ -13,6 +15,9 @@ repositories {
 }
 
 dependencies {
+	implementation project(':api')
+	implementation project(':util')
+
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -20,5 +25,10 @@ dependencies {
 }
 
 tasks.named('test') {
+//	JUnit is configured to be used to run our tests on Gradle builds.
 	useJUnitPlatform()
+}
+
+jar {
+	enabled = false
 }

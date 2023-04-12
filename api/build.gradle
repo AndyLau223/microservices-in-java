@@ -1,0 +1,29 @@
+plugins {
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'java'
+}
+
+group = 'se.magnus.microservices.api'
+version = '1.0.0-SNAPSHOT'
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    springBootVersion = '2.5.2'
+}
+
+dependencies {
+//    This allows us to retain Spring Boot dependency management while we're replacing the construction of a fat JAR in the build step
+//    with the creation of a normal JAR file that only contains the project's own class and property files.
+    implementation platform("org.springframework.boot:spring-boot-dependencies:${springBootVersion}")
+
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+test {
+    useJUnitPlatform()
+}

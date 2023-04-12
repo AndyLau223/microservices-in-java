@@ -1,7 +1,7 @@
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '2.5.2'
-	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'java'
+    id 'org.springframework.boot' version '2.5.2'
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
 }
 
 group = 'se.magnus.microservices.core.product'
@@ -9,16 +9,30 @@ version = '1.0.0-SNAPSHOT'
 sourceCompatibility = '1.8'
 
 repositories {
-	mavenCentral()
+    mavenCentral()
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-actuator'
-	implementation 'org.springframework.boot:spring-boot-starter-webflux'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'io.projectreactor:reactor-test'
+    implementation project(':api')
+    implementation project(':util')
+
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'io.projectreactor:reactor-test'
 }
 
 tasks.named('test') {
-	useJUnitPlatform()
+    useJUnitPlatform()
+}
+
+jar {
+/**
+ * Starting with Spring Boot v2.5.0, two jar files are created when running the ./gradlew build command:
+ * the ordinary jar file, plus a plain jar file containing only the class files resulting from compiling
+ * the Java files in the Spring Boot application. Since we don't need the new plain jar file, its creation
+ * has been disabled to make it possible to refer to the ordinary jar file using a wildcard when running
+ * the Spring Boot application, for example: java -jar microservices/product-service/build/libs/*.jar
+ */
+    enabled = false
 }
