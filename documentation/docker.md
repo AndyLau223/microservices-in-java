@@ -235,3 +235,5 @@ docker system prune -f --volumes
 ./gradlew clean build && docker-compose build && ./test-em-all.bash start stop
 
 ```
+
+[docker compose command reference](https://docs.docker.com/engine/reference/commandline/compose_build/)
