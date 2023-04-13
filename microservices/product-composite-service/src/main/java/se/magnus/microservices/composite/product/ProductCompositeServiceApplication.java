@@ -39,6 +39,11 @@ public class ProductCompositeServiceApplication {
     @Value("${api.common.contact.email}")
     String apiContactEmail;
 
+    /**
+     * Will expose on $HOST:$PORT/openapi/swagger-ui.html
+     *
+     * @return the common OpenAPI documentation
+     */
     @Bean
     public OpenAPI getOpenApiDocumentation() {
         return new OpenAPI()

@@ -64,6 +64,21 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
     }
 
     @Override
+    public Product createProduct(Product body) {
+        try {
+            String url = productServiceUrl;
+            LOG.debug("Will call createProduct API on URL: {}", url);
+
+            Product product = restTemplate.postForObject(url, body, Product.class);
+            LOG.debug("Create a product with id: {}", product.getProductId());
+            return product;
+        } catch (HttpClientErrorException ex) {
+            throw handleHttpClientException(ex);
+        }
+
+    }
+
+    @Override
     public Product getProduct(int productId) {
 
         try {
@@ -76,27 +91,33 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
             return product;
 
         } catch (HttpClientErrorException ex) {
-
-            switch (ex.getStatusCode()) {
-                case NOT_FOUND:
-                    throw new NotFoundException(getErrorMessage(ex));
-
-                case UNPROCESSABLE_ENTITY:
-                    throw new InvalidInputException(getErrorMessage(ex));
-
-                default:
-                    LOG.warn("Got an unexpected HTTP error: {}, will rethrow it", ex.getStatusCode());
-                    LOG.warn("Error body; {}", ex.getResponseBodyAsString());
-                    throw ex;
-            }
+            throw handleHttpClientException(ex);
         }
     }
 
-    private String getErrorMessage(HttpClientErrorException ex) {
+    @Override
+    public void deleteProduct(int productId) {
         try {
-            return mapper.readValue(ex.getResponseBodyAsString(), HttpErrorInfo.class).getMessage();
-        } catch (IOException ioex) {
-            return ex.getMessage();
+            String url = productServiceUrl + "/" + productId;
+            LOG.debug("Will call the deleteProduct API on URL: {}", url);
+            restTemplate.delete(url);
+
+        } catch (HttpClientErrorException ex) {
+            throw handleHttpClientException(ex);
+        }
+    }
+
+
+    @Override
+    public Recommendation createRecommendation(Recommendation body) {
+        try {
+            String url = recommendationServiceUrl;
+            LOG.debug("Will call createRecommendation on URL: {}", url);
+            Recommendation recommendation = restTemplate.postForObject(url, body, Recommendation.class);
+            LOG.debug("Created a recommendation with id: {}", recommendation.getProductId());
+            return recommendation;
+        } catch (HttpClientErrorException ex) {
+            throw handleHttpClientException(ex);
         }
     }
 
@@ -112,10 +133,37 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
                     .getBody();
 
             LOG.debug("Found {} recommendations for a product with id: {}", recommendations.size(), productId);
-            return  recommendations;
+            return recommendations;
         } catch (Exception ex) {
             LOG.warn("Got an exception while requesting recommendations, return zero recommendations: {}", ex.getMessage());
             return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public void deleteRecommendation(int productId) {
+        try {
+            String url = recommendationServiceUrl + "?productId=" + productId;
+            LOG.debug("Will call the deleteRecommendations API on URL: {}", url);
+
+            restTemplate.delete(url);
+        } catch (HttpClientErrorException ex) {
+            throw handleHttpClientException(ex);
+        }
+    }
+
+    @Override
+    public Review createReview(Review body) {
+        try {
+            String url = reviewServiceUrl;
+            LOG.debug("Will post a new review to URL: {}", url);
+
+            Review review = restTemplate.postForObject(url, body, Review.class);
+            LOG.debug("Created a review with id: {}", review.getProductId());
+
+            return review;
+        } catch (HttpClientErrorException ex) {
+            throw handleHttpClientException(ex);
         }
     }
 
@@ -126,17 +174,52 @@ public class ProductCompositeIntegration implements ProductService, Recommendati
 
             LOG.debug("Will call getReviews API on URL: {}", url);
             List<Review> reviews = restTemplate
-                    .exchange(url, GET, null, new ParameterizedTypeReference<List<Review>>() {})
+                    .exchange(url, GET, null, new ParameterizedTypeReference<List<Review>>() {
+                    })
                     .getBody();
 
             LOG.debug("Found {} reviews for a product with id: {}", reviews.size(), productId);
             return reviews;
 
-        }catch (Exception ex) {
+        } catch (Exception ex) {
             LOG.warn("Got an exception while requesting reviews, return zero reviews: {}", ex.getMessage());
             return Collections.emptyList();
         }
     }
 
+    @Override
+    public void deleteReview(int productId) {
+        try {
+            String url = reviewServiceUrl + "?productId=" + productId;
+            LOG.debug("Will call the deleteReviews API on URL: {}", url);
 
+            restTemplate.delete(url);
+        } catch (HttpClientErrorException ex) {
+            throw handleHttpClientException(ex);
+        }
+    }
+
+    private RuntimeException handleHttpClientException(HttpClientErrorException ex) {
+        switch (ex.getStatusCode()) {
+
+            case NOT_FOUND:
+                return new NotFoundException(getErrorMessage(ex));
+
+            case UNPROCESSABLE_ENTITY:
+                return new InvalidInputException(getErrorMessage(ex));
+
+            default:
+                LOG.warn("Got an unexpected HTTP error: {}, will rethrow it", ex.getStatusCode());
+                LOG.warn("Error body: {}", ex.getResponseBodyAsString());
+                return ex;
+        }
+    }
+
+    private String getErrorMessage(HttpClientErrorException ex) {
+        try {
+            return mapper.readValue(ex.getResponseBodyAsString(), HttpErrorInfo.class).getMessage();
+        } catch (IOException ioex) {
+            return ex.getMessage();
+        }
+    }
 }
