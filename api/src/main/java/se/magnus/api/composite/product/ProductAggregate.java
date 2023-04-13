@@ -16,6 +16,14 @@ public class ProductAggregate {
 
     private final ServiceAddresses serviceAddresses;
 
+    public ProductAggregate() {
+        productId = 0;
+        name = null;
+        weight = 0;
+        recommendations = null;
+        reviews = null;
+        serviceAddresses = null;
+    }
     public ProductAggregate(
             int productId,
             String name,
