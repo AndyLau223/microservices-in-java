@@ -16,9 +16,11 @@ import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.ReactiveHealthContributor;
 import org.springframework.boot.actuate.health.ReactiveHealthIndicator;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
@@ -82,6 +84,7 @@ public class ProductCompositeServiceApplication {
                         .url(apiExternalDocUrl));
     }
 
+
     private final Integer threadPoolSize;
 
     private final Integer taskQueueSize;
@@ -115,6 +118,12 @@ public class ProductCompositeServiceApplication {
         return CompositeReactiveHealthContributor.fromMap(registry);
     }
 
+//    https://docs.spring.io/spring-cloud-commons/docs/current/reference/html/#webclinet-loadbalancer-client
+    @Bean
+    @LoadBalanced
+    public WebClient.Builder loadBalancedWebClientBuilder() {
+        return WebClient.builder();
+    }
 
     public static void main(String[] args) {
         SpringApplication.run(ProductCompositeServiceApplication.class, args);
