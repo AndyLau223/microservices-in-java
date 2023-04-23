@@ -17,12 +17,13 @@ import se.magnus.microservices.core.product.persistence.ProductRepository;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY;
 import static se.magnus.api.event.Event.Type.CREATE;
 import static se.magnus.api.event.Event.Type.DELETE;
 
 //https://spring.io/guides/gs/testing-web/
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = RANDOM_PORT, properties = {"eureka.client.enabled=false"})
 class ProductServiceApplicationTests extends MongoDbTestBase {
 
     @Autowired
