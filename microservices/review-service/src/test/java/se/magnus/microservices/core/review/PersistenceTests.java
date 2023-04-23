@@ -1,5 +1,11 @@
 package se.magnus.microservices.core.review;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED;
+
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,24 +13,17 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import se.magnus.microservices.core.review.persistence.ReviewEntity;
 import se.magnus.microservices.core.review.persistence.ReviewRepository;
 
-import java.util.List;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasSize;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 @DataJpaTest
-@Transactional(propagation = Propagation.NOT_SUPPORTED)
+@Transactional(propagation = NOT_SUPPORTED)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-public class PersistenceTests extends  MySqlTestBase {
+class PersistenceTests extends MySqlTestBase {
 
-    @Autowired private ReviewRepository repository;
+    @Autowired
+    private ReviewRepository repository;
 
     private ReviewEntity savedEntity;
 
@@ -108,7 +107,6 @@ public class PersistenceTests extends  MySqlTestBase {
         assertEquals("a1", updatedEntity.getAuthor());
     }
 
-
     private void assertEqualsReview(ReviewEntity expectedEntity, ReviewEntity actualEntity) {
         assertEquals(expectedEntity.getId(),        actualEntity.getId());
         assertEquals(expectedEntity.getVersion(),   actualEntity.getVersion());
@@ -118,5 +116,4 @@ public class PersistenceTests extends  MySqlTestBase {
         assertEquals(expectedEntity.getSubject(),   actualEntity.getSubject());
         assertEquals(expectedEntity.getContent(),   actualEntity.getContent());
     }
-
 }

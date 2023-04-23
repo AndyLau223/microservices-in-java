@@ -1,6 +1,8 @@
 package se.magnus.api.core.review;
 
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 
@@ -21,7 +23,7 @@ public interface ReviewService {
             value    = "/review",
             consumes = "application/json",
             produces = "application/json")
-    Review createReview(@RequestBody Review body);
+    Mono<Review> createReview(@RequestBody Review body);
 
     /**
      * Same usage: "curl $HOST:$PORT/review?productId=1".
@@ -33,7 +35,7 @@ public interface ReviewService {
             value = "/review",
             produces = "application/json"
     )
-    List<Review> getReviews(@RequestParam(value = "productId", required = true) int productId);
+    Flux<Review> getReviews(@RequestParam(value = "productId", required = true) int productId);
 
 
     /**
@@ -42,5 +44,5 @@ public interface ReviewService {
      * @param productId Id of the product
      */
     @DeleteMapping(value = "/review")
-    void deleteReview(@RequestParam(value = "productId", required = true) int productId);
+    Mono<Void> deleteReviews(@RequestParam(value = "productId", required = true) int productId);
 }

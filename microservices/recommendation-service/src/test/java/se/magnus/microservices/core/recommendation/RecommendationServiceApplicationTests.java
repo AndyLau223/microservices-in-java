@@ -1,118 +1,149 @@
 package se.magnus.microservices.core.recommendation;
 
-import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+import static org.springframework.http.HttpStatus.*;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static se.magnus.api.event.Event.Type.CREATE;
+import static se.magnus.api.event.Event.Type.DELETE;
+
+import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoAutoConfiguration;
-import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.dao.DuplicateKeyException;
-import org.springframework.dao.OptimisticLockingFailureException;
-import org.testcontainers.shaded.org.hamcrest.MatcherAssert;
-import se.magnus.microservices.core.recommendation.persistence.RecommendationEntity;
+import org.springframework.http.HttpStatus;
+import org.springframework.test.web.reactive.server.WebTestClient;
+import se.magnus.api.core.recommendation.Recommendation;
+import se.magnus.api.event.Event;
+import se.magnus.api.exceptions.InvalidInputException;
 import se.magnus.microservices.core.recommendation.persistence.RecommendationRepository;
 
-import java.util.List;
-import java.util.Optional;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasSize;
-import static org.junit.jupiter.api.Assertions.*;
-
-@DataMongoTest(excludeAutoConfiguration = EmbeddedMongoAutoConfiguration.class)
+@SpringBootTest(webEnvironment = RANDOM_PORT)
 class RecommendationServiceApplicationTests extends MongoDbTestBase {
+
+    @Autowired
+    private WebTestClient client;
 
     @Autowired
     private RecommendationRepository repository;
 
-    private RecommendationEntity savedEntity;
+    @Autowired
+    @Qualifier("messageProcessor")
+    private Consumer<Event<Integer, Recommendation>> messageProcessor;
 
     @BeforeEach
     void setupDb() {
-        repository.deleteAll();
-
-        RecommendationEntity entity = new RecommendationEntity(1, 2, "a", 3, "c");
-        savedEntity = repository.save(entity);
-        assertEqualsRecommendation(savedEntity, entity);
+        repository.deleteAll().block();
     }
 
     @Test
-    void create() {
-        RecommendationEntity newEntity = new RecommendationEntity(1, 3, "a", 3, "c");
+    void getRecommendationsByProductId() {
 
-        repository.save(newEntity);
+        int productId = 1;
 
-        RecommendationEntity foundEntity = repository.findById(newEntity.getId()).get();
+        sendCreateRecommendationEvent(productId, 1);
+        sendCreateRecommendationEvent(productId, 2);
+        sendCreateRecommendationEvent(productId, 3);
 
-        assertEqualsRecommendation(newEntity, foundEntity);
+        assertEquals(3, (long)repository.findByProductId(productId).count().block());
 
-        assertEquals(2, repository.count());
-    }
-
-    @Test
-    void update() {
-        savedEntity.setAuthor("2");
-        repository.save(savedEntity);
-
-        RecommendationEntity foundEntity = repository.findById(savedEntity.getId()).get();
-        assertEqualsRecommendation(savedEntity, foundEntity);
-        assertEquals("2", foundEntity.getAuthor());
-        assertEquals(1, foundEntity.getVersion());
-    }
-
-    @Test
-    void delete() {
-        repository.delete(savedEntity);
-        assertFalse(repository.findById(savedEntity.getId()).isPresent());
-    }
-
-
-    @Test
-    void getByProductId(){
-        List<RecommendationEntity> entityList = repository.findByProductId(savedEntity.getProductId());
-        assertThat(entityList, hasSize(1));
+        getAndVerifyRecommendationsByProductId(productId, OK)
+                .jsonPath("$.length()").isEqualTo(3)
+                .jsonPath("$[2].productId").isEqualTo(productId)
+                .jsonPath("$[2].recommendationId").isEqualTo(3);
     }
 
     @Test
     void duplicateError() {
-        assertThrows(DuplicateKeyException.class, () -> {
-            RecommendationEntity entity = new RecommendationEntity(1, 2, "a", 3, "c");
-            repository.save(entity);
-        });
+
+        int productId = 1;
+        int recommendationId = 1;
+
+        sendCreateRecommendationEvent(productId, recommendationId);
+
+        assertEquals(1, (long)repository.count().block());
+
+        InvalidInputException thrown = assertThrows(
+                InvalidInputException.class,
+                () -> sendCreateRecommendationEvent(productId, recommendationId),
+                "Expected a InvalidInputException here!");
+        assertEquals("Duplicate key, Product Id: 1, Recommendation Id:1", thrown.getMessage());
+
+        assertEquals(1, (long)repository.count().block());
     }
 
     @Test
-    void optimisticLockError() {
-        // Store the saved entity in two separate entity objects
-        RecommendationEntity entity1 = repository.findById(savedEntity.getId()).get();
-        RecommendationEntity entity2 = repository.findById(savedEntity.getId()).get();
+    void deleteRecommendations() {
 
-        // Update the entity using the first entity object
-        entity1.setAuthor("a1");
-        repository.save(entity1);
+        int productId = 1;
+        int recommendationId = 1;
 
-        //  Update the entity using the second entity object.
-        // This should fail since the second entity now holds an old version number, i.e. an Optimistic Lock Error
-        assertThrows(OptimisticLockingFailureException.class, () -> {
-            entity2.setAuthor("a2");
-            repository.save(entity2);
-        });
+        sendCreateRecommendationEvent(productId, recommendationId);
+        assertEquals(1, (long)repository.findByProductId(productId).count().block());
 
-        // Get the updated entity from the database and verify its new status
-        RecommendationEntity updatedEntity = repository.findById(savedEntity.getId()).get();
-        assertEquals(1, (int)updatedEntity.getVersion());
-        assertEquals("a1", updatedEntity.getAuthor());
+        sendDeleteRecommendationEvent(productId);
+        assertEquals(0, (long)repository.findByProductId(productId).count().block());
+
+        sendDeleteRecommendationEvent(productId);
     }
 
-    private void assertEqualsRecommendation(RecommendationEntity expectedEntity, RecommendationEntity actualEntity) {
-        assertEquals(expectedEntity.getId(), actualEntity.getId());
-        assertEquals(expectedEntity.getVersion(), actualEntity.getVersion());
-        assertEquals(expectedEntity.getProductId(), actualEntity.getProductId());
-        assertEquals(expectedEntity.getRecommendationId(), actualEntity.getRecommendationId());
-        assertEquals(expectedEntity.getAuthor(), actualEntity.getAuthor());
-        assertEquals(expectedEntity.getRating(), actualEntity.getRating());
-        assertEquals(expectedEntity.getContent(), actualEntity.getContent());
+    @Test
+    void getRecommendationsMissingParameter() {
+
+        getAndVerifyRecommendationsByProductId("", BAD_REQUEST)
+                .jsonPath("$.path").isEqualTo("/recommendation")
+                .jsonPath("$.message").isEqualTo("Required int parameter 'productId' is not present");
+    }
+
+    @Test
+    void getRecommendationsInvalidParameter() {
+
+        getAndVerifyRecommendationsByProductId("?productId=no-integer", BAD_REQUEST)
+                .jsonPath("$.path").isEqualTo("/recommendation")
+                .jsonPath("$.message").isEqualTo("Type mismatch.");
+    }
+
+    @Test
+    void getRecommendationsNotFound() {
+
+        getAndVerifyRecommendationsByProductId("?productId=113", OK)
+                .jsonPath("$.length()").isEqualTo(0);
+    }
+
+    @Test
+    void getRecommendationsInvalidParameterNegativeValue() {
+
+        int productIdInvalid = -1;
+
+        getAndVerifyRecommendationsByProductId("?productId=" + productIdInvalid, UNPROCESSABLE_ENTITY)
+                .jsonPath("$.path").isEqualTo("/recommendation")
+                .jsonPath("$.message").isEqualTo("Invalid productId: " + productIdInvalid);
+    }
+
+    private WebTestClient.BodyContentSpec getAndVerifyRecommendationsByProductId(int productId, HttpStatus expectedStatus) {
+        return getAndVerifyRecommendationsByProductId("?productId=" + productId, expectedStatus);
+    }
+
+    private WebTestClient.BodyContentSpec getAndVerifyRecommendationsByProductId(String productIdQuery, HttpStatus expectedStatus) {
+        return client.get()
+                .uri("/recommendation" + productIdQuery)
+                .accept(APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isEqualTo(expectedStatus)
+                .expectHeader().contentType(APPLICATION_JSON)
+                .expectBody();
+    }
+
+    private void sendCreateRecommendationEvent(int productId, int recommendationId) {
+        Recommendation recommendation = new Recommendation(productId, recommendationId, "Author " + recommendationId, recommendationId, "Content " + recommendationId, "SA");
+        Event<Integer, Recommendation> event = new Event(CREATE, productId, recommendation);
+        messageProcessor.accept(event);
+    }
+
+    private void sendDeleteRecommendationEvent(int productId) {
+        Event<Integer, Recommendation> event = new Event(DELETE, productId, null);
+        messageProcessor.accept(event);
     }
 }
-
