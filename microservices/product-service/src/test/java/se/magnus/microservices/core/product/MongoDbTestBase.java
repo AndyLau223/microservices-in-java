@@ -6,14 +6,12 @@ import org.testcontainers.containers.MongoDBContainer;
 
 public abstract class MongoDbTestBase {
 
-    private static final MongoDBContainer database
-            = new MongoDBContainer("mongo:4.4.2");
+    private static MongoDBContainer database = new MongoDBContainer("mongo:4.4.2");
 
     static {
         database.start();
     }
 
-//     @DynamicPropertySource is to override the database configuration in application context. like configuration from an application.yaml
     @DynamicPropertySource
     static void setProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.data.mongodb.host", database::getContainerIpAddress);
