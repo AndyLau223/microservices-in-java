@@ -626,4 +626,28 @@ depends_on:
 
 ## Using RabbitMQ with partitions
 
-TBC..
+```yaml
+rabbitmq:
+  image: rabbitmq:3.8.11-management
+  mem_limit: 512m
+  ports:
+    - 5672: 5672
+    - 15672:15672
+  healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 5s
+      timeout: 2s
+      retries: 60
+```
+
+
+## Automated test
+
+```shell
+# test normal configuration 
+ ./gradlew clean build && dockerc-compose build && ./test-em-all.bash start stop 
+# test partitions versino 
+export COMPOSE_FILE=docker-compose-partitions.yml && ./test-em-all.bash start stop && unset COMPOSE_FILE
+# test kafka 
+export COMPOSE_FILE=docker-compose-kafka.yml && ./test-em-all.bash start stop && unset COMPOSE_FILE
+```
