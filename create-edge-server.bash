@@ -8,10 +8,10 @@ spring init \
 --build=gradle \
 --java-version=1.8 \
 --packaging=jar \
---name=eureka-server \
---package-name=se.magnus.springcloud.eurekaserver \
---groupId=se.magnus.springcloud.eurekaserver \
+--name=gateway \
+--package-name=se.magnus.springcloud.gateway \
+--groupId=se.magnus.springcloud.gateway \
 --dependencies=actuator,webflux \
 --version=1.0.0-SNAPSHOT \
 --type=gradle-project \
-eureka-server
+gateway
