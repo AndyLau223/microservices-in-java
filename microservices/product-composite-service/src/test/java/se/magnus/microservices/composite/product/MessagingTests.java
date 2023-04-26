@@ -1,6 +1,18 @@
 package se.magnus.microservices.composite.product;
 
-import org.assertj.core.api.Assertions;
+import static java.util.Collections.singletonList;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+import static org.springframework.http.HttpStatus.ACCEPTED;
+import static reactor.core.publisher.Mono.just;
+import static se.magnus.api.event.Event.Type.CREATE;
+import static se.magnus.api.event.Event.Type.DELETE;
+import static se.magnus.microservices.composite.product.IsSameEvent.sameEventExceptCreatedAt;
+
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -21,30 +33,17 @@ import se.magnus.api.core.recommendation.Recommendation;
 import se.magnus.api.core.review.Review;
 import se.magnus.api.event.Event;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import static java.util.Collections.singletonList;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
-import static org.springframework.http.HttpStatus.ACCEPTED;
-import static reactor.core.publisher.Mono.just;
-import static se.magnus.api.event.Event.Type.CREATE;
-import static se.magnus.api.event.Event.Type.DELETE;
-import static se.magnus.microservices.composite.product.IsSameEvent.sameEventExceptCreatedAt;
-
 @SpringBootTest(
-        webEnvironment = RANDOM_PORT, properties = {
-        "spring.main.allow-bean-definition-overriding=true",
-        "eureka.client.enabled=false"})
-
+        webEnvironment = RANDOM_PORT,
+        classes = {TestSecurityConfig.class},
+        properties = {
+                "spring.security.oauth2.resourceserver.jwt.issuer-uri=",
+                "spring.main.allow-bean-definition-overriding=true",
+                "eureka.client.enabled=false"})
 @Import({TestChannelBinderConfiguration.class})
-public class MessagingTests {
+class MessagingTests {
 
     private static final Logger LOG = LoggerFactory.getLogger(MessagingTests.class);
-
 
     @Autowired
     private WebTestClient client;
@@ -61,6 +60,7 @@ public class MessagingTests {
 
     @Test
     void createCompositeProduct1() {
+
         ProductAggregate composite = new ProductAggregate(1, "name", 1, null, null, null);
         postAndVerifyProduct(composite, ACCEPTED);
 
@@ -81,7 +81,8 @@ public class MessagingTests {
     }
 
     @Test
-    void createCompositeProduct2(){
+    void createCompositeProduct2() {
+
         ProductAggregate composite = new ProductAggregate(1, "name", 1,
                 singletonList(new RecommendationSummary(1, "a", 1, "c")),
                 singletonList(new ReviewSummary(1, "a", "s", "c")), null);
@@ -91,33 +92,34 @@ public class MessagingTests {
         final List<String> recommendationMessages = getMessages("recommendations");
         final List<String> reviewMessages = getMessages("reviews");
 
-
+        // Assert one create product event queued up
         assertEquals(1, productMessages.size());
 
         Event<Integer, Product> expectedProductEvent =
                 new Event(CREATE, composite.getProductId(), new Product(composite.getProductId(), composite.getName(), composite.getWeight(), null));
         assertThat(productMessages.get(0), is(sameEventExceptCreatedAt(expectedProductEvent)));
 
-
         // Assert one create recommendation event queued up
         assertEquals(1, recommendationMessages.size());
+
         RecommendationSummary rec = composite.getRecommendations().get(0);
         Event<Integer, Product> expectedRecommendationEvent =
                 new Event(CREATE, composite.getProductId(),
                         new Recommendation(composite.getProductId(), rec.getRecommendationId(), rec.getAuthor(), rec.getRate(), rec.getContent(), null));
         assertThat(recommendationMessages.get(0), is(sameEventExceptCreatedAt(expectedRecommendationEvent)));
 
+        // Assert one create review event queued up
         assertEquals(1, reviewMessages.size());
+
         ReviewSummary rev = composite.getReviews().get(0);
-        Event<Integer, Review> expectedReviewEvent =
-                new Event<>(CREATE, composite.getProductId(), new Review(composite.getProductId(), rev.getReviewId(), rev.getAuthor(), rev.getSubject(), rev.getContent(), null));
+        Event<Integer, Product> expectedReviewEvent =
+                new Event(CREATE, composite.getProductId(), new Review(composite.getProductId(), rev.getReviewId(), rev.getAuthor(), rev.getSubject(), rev.getContent(), null));
         assertThat(reviewMessages.get(0), is(sameEventExceptCreatedAt(expectedReviewEvent)));
     }
 
-
     @Test
     void deleteCompositeProduct() {
-        deleteAnyVerifyProduct(1, ACCEPTED);
+        deleteAndVerifyProduct(1, ACCEPTED);
 
         final List<String> productMessages = getMessages("products");
         final List<String> recommendationMessages = getMessages("recommendations");
@@ -126,7 +128,7 @@ public class MessagingTests {
         // Assert one delete product event queued up
         assertEquals(1, productMessages.size());
 
-        Event<Integer, Product> expectedProductEvent = new Event<Integer, Product>(DELETE, 1, null);
+        Event<Integer, Product> expectedProductEvent = new Event(DELETE, 1, null);
         assertThat(productMessages.get(0), is(sameEventExceptCreatedAt(expectedProductEvent)));
 
         // Assert one delete recommendation event queued up
@@ -142,13 +144,12 @@ public class MessagingTests {
         assertThat(reviewMessages.get(0), is(sameEventExceptCreatedAt(expectedReviewEvent)));
     }
 
-
     private void purgeMessages(String bindingName) {
-        getMessage(bindingName);
+        getMessages(bindingName);
     }
 
     private List<String> getMessages(String bindingName) {
-        ArrayList<String> messages = new ArrayList<>();
+        List<String> messages = new ArrayList<>();
         boolean anyMoreMessages = true;
 
         while (anyMoreMessages) {
@@ -156,15 +157,13 @@ public class MessagingTests {
 
             if (message == null) {
                 anyMoreMessages = false;
+
             } else {
                 messages.add(new String(message.getPayload()));
             }
-
         }
-
         return messages;
     }
-
 
     private Message<byte[]> getMessage(String bindingName) {
         try {
@@ -185,7 +184,7 @@ public class MessagingTests {
                 .expectStatus().isEqualTo(expectedStatus);
     }
 
-    private void deleteAnyVerifyProduct(int productId, HttpStatus expectedStatus) {
+    private void deleteAndVerifyProduct(int productId, HttpStatus expectedStatus) {
         client.delete()
                 .uri("/product-composite/" + productId)
                 .exchange()
