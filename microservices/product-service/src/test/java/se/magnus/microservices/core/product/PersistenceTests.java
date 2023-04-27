@@ -11,7 +11,9 @@ import reactor.test.StepVerifier;
 import se.magnus.microservices.core.product.persistence.ProductEntity;
 import se.magnus.microservices.core.product.persistence.ProductRepository;
 
-@DataMongoTest(excludeAutoConfiguration = EmbeddedMongoAutoConfiguration.class)
+@DataMongoTest(
+        excludeAutoConfiguration = EmbeddedMongoAutoConfiguration.class,
+        properties = {"spring.cloud.config.enabled=false"})
 class PersistenceTests extends MongoDbTestBase {
 
     @Autowired

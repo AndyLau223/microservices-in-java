@@ -1,7 +1,7 @@
 spring.config.import: "configserver:"
 
 spring:
-  application.name: eureka-server
+  application.name: product
   cloud.config:
     failFast: true
     retry:

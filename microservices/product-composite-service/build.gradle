@@ -20,6 +20,8 @@ ext {
 dependencies {
     implementation project(':api')
     implementation project(':util')
+
+
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
     implementation 'org.springframework.cloud:spring-cloud-starter-stream-rabbit'
@@ -27,6 +29,8 @@ dependencies {
     implementation 'org.springdoc:springdoc-openapi-webflux-ui:1.5.2'
     implementation 'org.springdoc:springdoc-openapi-common:1.5.2'
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+    implementation 'org.springframework.cloud:spring-cloud-starter-config'
+    implementation 'org.springframework.retry:spring-retry'
 
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.security:spring-security-oauth2-resource-server'
