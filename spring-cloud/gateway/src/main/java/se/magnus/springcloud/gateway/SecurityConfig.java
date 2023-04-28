@@ -21,6 +21,7 @@ public class SecurityConfig {
                 .pathMatchers("/headerrouting/**").permitAll()
                 .pathMatchers("/actuator/**").permitAll()
                 .pathMatchers("/eureka/**").permitAll()
+                .pathMatchers("/config/**").permitAll()
                 .pathMatchers("/oauth2/**").permitAll()
                 .pathMatchers("/login/**").permitAll()
                 .pathMatchers("/error/**").permitAll()
