@@ -1,6 +1,10 @@
 server:
   port: 8761
 
+app:
+  eureka-username: u
+  eureka-password: p
+
 eureka:
   instance:
     hostname: localhost
@@ -11,7 +15,6 @@ eureka:
       defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
   # from: https://github.com/spring-cloud-samples/eureka/blob/master/src/main/resources/application.yml
   server:
-#    These two parameters used for minimize the startup time
     waitTimeInMsWhenSyncEmpty: 0
     response-cache-update-interval-ms: 5000
 

@@ -1,12 +1,17 @@
 server.port: 7002
 server.error.include-message: always
+
 spring.application.name: recommendation
-app.eureka-server: localhost
+
+app:
+  eureka-username: u
+  eureka-password: p
+  eureka-server: localhost
 
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://${app.eureka-server}:8761/eureka/
+      defaultZone: "http://${app.eureka-username}:${app.eureka-password}@${app.eureka-server}:8761/eureka/"
     initialInstanceInfoReplicationIntervalSeconds: 5
     registryFetchIntervalSeconds: 5
   instance:
@@ -63,12 +68,13 @@ spring.config.activate.on-profile: docker
 
 server.port: 8080
 
+app.eureka-server: eureka
+
 spring.data.mongodb.host: mongodb
 
 spring.rabbitmq.host: rabbitmq
 
 spring.cloud.stream.kafka.binder.brokers: kafka
-eureka.client.serviceUrl.defaultZone: http://eureka:8761/eureka/
 
 ---
 spring.config.activate.on-profile: streaming_partitioned
