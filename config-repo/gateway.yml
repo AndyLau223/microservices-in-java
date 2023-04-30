@@ -89,6 +89,9 @@ spring.cloud.gateway.routes:
 
 spring.security.oauth2.resourceserver.jwt.issuer-uri: http://${app.auth-server}:9999
 
+# distributed tracing configuration
+spring.sleuth.reactor.instrumentation-type: decorate-on-last
+
 logging:
   level:
     root: INFO

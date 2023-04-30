@@ -11,7 +11,9 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-@SpringBootTest(webEnvironment = RANDOM_PORT, properties = {"spring.cloud.config.enabled=false"})
+@SpringBootTest(webEnvironment = RANDOM_PORT, properties = {
+        "management.health.rabbit.enabled=false",
+        "spring.cloud.config.enabled=false"})
 class EurekaServerApplicationTests {
 
     @Test

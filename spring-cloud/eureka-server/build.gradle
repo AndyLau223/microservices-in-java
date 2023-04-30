@@ -25,6 +25,12 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.cloud:spring-cloud-starter-config'
 	implementation 'org.springframework.retry:spring-retry'
+
+	implementation 'org.springframework.cloud:spring-cloud-starter-stream-rabbit'
+	implementation 'org.springframework.cloud:spring-cloud-starter-stream-kafka'
+	implementation 'org.springframework.cloud:spring-cloud-starter-sleuth'
+	implementation 'org.springframework.cloud:spring-cloud-sleuth-zipkin'
+
 	implementation 'org.glassfish.jaxb:jaxb-runtime'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
