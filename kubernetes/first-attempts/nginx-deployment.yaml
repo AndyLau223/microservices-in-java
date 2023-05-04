@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment # declare a Deployment object
+metadata: # describe the Deployment object
+  name: nginx-deploy
+spec:
+  replicas: 3 # we want to have one Pod up and running
+  selector:
+    matchLabels:
+      app: nginx-app # looks for `nginx-app` label
+  template: # specify how the Pods will be created
+    metadata:
+      labels:
+        app: nginx-app
+    spec:
+      containers: # specifies the detail of the creation of the single container in the Pod.
+        - name: nginx-container
+          image: nginx:latest
+          ports:
+            - containerPort: 80
